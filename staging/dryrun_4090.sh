@@ -69,6 +69,12 @@ EOF
 python3 "$PKG/pipeline/spec_check.py" "$WORK/spec-staging.json" "$PKG" || die "staging spec failed validation"
 say "spec validated (rev=${REV:0:12}…)"
 
+# stage-14 resolves the cell spec at $REPO_DIR/specs/<cell-id>.json (Amendment-04
+# rubric lookup). Place the staging spec there for the dry-run duration only —
+# staging fixture, removed on exit, never committed.
+cp "$WORK/spec-staging.json" "$PKG/specs/$CELL_ID.json"
+trap 'rm -f "$PKG/specs/$CELL_ID.json"' EXIT
+
 # ---------- 2. shared env ----------
 export EFFIQ_HOME="$WORK/effiq" EFFIQ_REPO_ROOT="$PKG" EFFIQ_CELL_DIR="$CELL_DIR"
 export EFFIQ_CELL_ID="$CELL_ID" EFFIQ_SPEC_SHA256="$(sha256sum "$WORK/spec-staging.json" | cut -d' ' -f1)"
