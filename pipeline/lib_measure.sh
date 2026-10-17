@@ -25,7 +25,7 @@ for arm in $ORDER; do
   nohup python3 -m vllm.entrypoints.openai.api_server \
     --model "$MPATH" --served-model-name cell-model \
     --max-model-len "$MAX_MODEL_LEN" --port "$PORT" \
-    --gpu-memory-utilization 0.92 --enable-prefix-caching=False \
+    --gpu-memory-utilization 0.92 --no-enable-prefix-caching \
     $EXTRA > "/tmp/vllm-measure-$arm.log" 2>&1 &
   echo $! > /tmp/.effiq-server-pid
   for i in $(seq 1 180); do
