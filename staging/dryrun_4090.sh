@@ -119,7 +119,7 @@ VOLUME_DIR="$WORK/volume" bash "$PKG/pipeline/stages/15-cell-preflight.sh"
 if python3 -c "import vllm" 2>/dev/null; then
   say "3b. real reference generation on 0.6B (vLLM bf16, 4090)"
   S15="$(ls -dt "$CELL_DIR/15-cell-preflight"/run_* | head -1)"
-  MODEL_DIR="$CKPT_ROOT/base" PORT=8123 MAX_MODEL_LEN=4096 GEN_CONC=4 MAX_TOKENS_CAP=256 TEMPERATURE=0 \
+  MODEL_DIR="$CKPT_ROOT/$CELL_ID/base" PORT=8123 MAX_MODEL_LEN=4096 GEN_CONC=4 MAX_TOKENS_CAP=256 TEMPERATURE=0 \
   SERVE_EXTRA="" bash "$PKG/pipeline/lib_generate.sh" \
     --set "$S15/frozen_set.jsonl" --out "$S15/gen_A.jsonl" \
     --set "$S15/screening_set.jsonl" --out "$S15/gen_R.jsonl" || say "WARN: real gen failed — leaving stage-15 mock outputs (staging verdict unaffected)"
@@ -162,7 +162,9 @@ EOF
 chmod 600 "$MOCKENV/arms-recipes.json"
 # reuse the stage-15 0.6B weight download (staging points straight at it)
 mkdir -p "$CKPT_ROOT"
-[ -d "$CKPT_ROOT/base" ] || ln -s "$(ls -dt "$WORK"/effiq/p005-ckpt 2>/dev/null)/$CELL_ID/base" "$CKPT_ROOT/base" 2>/dev/null || true
+# stage-15 downloads to $CKPT_ROOT/$CELL_ID/base (stage-side layout); expose it
+# at $CKPT_ROOT/base for the screening stage's reuse path.
+[ -d "$CKPT_ROOT/base" ] || ln -s "$CKPT_ROOT/$CELL_ID/base" "$CKPT_ROOT/base" 2>/dev/null || true
 STAGE16_MOCK_BUILD=1 STAGE16_MOCK_JUDGE=1 RECIPES_FILE="$MOCKENV/arms-recipes.json" \
   bash "$PKG/pipeline/stages/16-arm-screening.sh" || die "stage 16 failed"
 
