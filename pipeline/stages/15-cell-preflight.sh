@@ -240,8 +240,14 @@ else:
     print(f"FATAL: unknown trace_source {src}", file=sys.stderr); sys.exit(1)
 with open(out, "w", encoding="utf-8") as f:
     for r in rows: f.write(json.dumps(r, ensure_ascii=False, sort_keys=True) + "\n")
-json.dump(note, open(os.path.join(os.environ["RUN_DIR"], "trace_provenance.json"), "w"), indent=1)
+with open(os.path.join(os.environ["RUN_DIR"], "trace_provenance.json"), "w") as f:
+    json.dump(note, f, indent=1)
 print(f"trace rows: {len(rows)}")
+# streaming teardown race (observed 2026-10-17, exit 134): pyarrow/huggingface_hub
+# prefetch threads can outlive the workload and abort interpreter finalization
+# (PyGILState_Release) after all artifacts are written. Skip finalization so the
+# exit code reflects the completed work, not the race.
+sys.stdout.flush(); sys.stderr.flush(); os._exit(0)
 PY
 fi
 TRACE_SHA=$(sha_file "$TRACE_JSONL")
