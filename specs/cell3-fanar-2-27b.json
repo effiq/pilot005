@@ -1,47 +1,47 @@
 {
-  "schema": "effiq-spec/v1",
-  "cell": {
-    "id": "cell3-fanar-2-27b",
-    "pilot": "005",
-    "role": "verdict-bearing"
-  },
-  "model": {
-    "repo_id": "QCRI/Fanar-2-27B-Instruct",
-    "revision": "PIN_AT_IGNITION__fetch HEAD commit sha from HF API, write here, commit BEFORE first run",
-    "family": "gemma-3",
-    "max_model_len": 32768,
-    "serve_extra_flags": "",
-    "profile_scope_regex": "^model\\.layers\\.\\d+\\.self_attn\\.(q_proj|k_proj|v_proj|o_proj)$"
-  },
-  "hardware": {
-    "gpu": "H100",
-    "count": 1,
-    "memory_gb": 80
-  },
-  "load": {
-    "trace_source": "wildchat-ar",
-    "trace_filter": "first user turn, language=Arabic, MSA scope only (dialects out of scope per Protocol v4.2 L3-4), <=4000 chars",
-    "lang": "ar",
-    "synthetic_seed": null
-  },
-  "generation": {
-    "temperature": 0,
-    "natural_stopping": true,
-    "gen_concurrency": 8,
-    "max_tokens_cap": 1024
-  },
-  "rubric": {
-    "file": "rubrics/default-ar.md",
-    "lang": "ar"
-  },
-  "anchors": {
-    "n_frozen": 150,
-    "n_screen": 40,
-    "n_calib_texts": 256,
-    "derive_seed": 20266301,
-    "run_seed_base": 20266300,
-    "blind_seed": 20266302,
-    "reuse": null
-  },
-  "private_segment_sha256": "1c6ba1dbd6c88a5016d8003d96fe366f352d6a5457edfec5178dbc8b3f7cf97b"
+ "schema": "effiq-spec/v1",
+ "cell": {
+  "id": "cell3-fanar-2-27b",
+  "pilot": "005",
+  "role": "verdict-bearing"
+ },
+ "model": {
+  "repo_id": "QCRI/Fanar-2-27B-Instruct",
+  "revision": "074005040e9c3511b1c43b4298bef09908285534",
+  "family": "gemma-3",
+  "max_model_len": 32768,
+  "serve_extra_flags": "",
+  "profile_scope_regex": "^model\\.layers\\.\\d+\\.self_attn\\.(q_proj|k_proj|v_proj|o_proj)$"
+ },
+ "hardware": {
+  "gpu": "H100",
+  "count": 1,
+  "memory_gb": 80
+ },
+ "load": {
+  "trace_source": "wildchat-ar",
+  "trace_filter": "first user turn, language=Arabic, MSA scope only (dialects out of scope per Protocol v4.2 L3-4), <=4000 chars",
+  "lang": "ar",
+  "synthetic_seed": null
+ },
+ "generation": {
+  "temperature": 0,
+  "natural_stopping": true,
+  "gen_concurrency": 8,
+  "max_tokens_cap": 1024
+ },
+ "rubric": {
+  "file": "rubrics/default-ar.md",
+  "lang": "ar"
+ },
+ "anchors": {
+  "n_frozen": 150,
+  "n_screen": 40,
+  "n_calib_texts": 256,
+  "derive_seed": 20266301,
+  "run_seed_base": 20266300,
+  "blind_seed": 20266302,
+  "reuse": null
+ },
+ "private_segment_sha256": "1c6ba1dbd6c88a5016d8003d96fe366f352d6a5457edfec5178dbc8b3f7cf97b"
 }

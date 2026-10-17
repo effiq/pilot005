@@ -1,47 +1,47 @@
 {
-  "schema": "effiq-spec/v1",
-  "cell": {
-    "id": "cell1-qwen3-32b",
-    "pilot": "005",
-    "role": "shakedown"
-  },
-  "model": {
-    "repo_id": "Qwen/Qwen3-32B",
-    "revision": "PIN_AT_IGNITION__fetch HEAD commit sha from HF API, write here, commit BEFORE first run",
-    "family": "qwen3-dense",
-    "max_model_len": 32768,
-    "serve_extra_flags": "",
-    "profile_scope_regex": "^model\\.layers\\.\\d+\\.self_attn\\.(q_proj|k_proj|v_proj|o_proj)$"
-  },
-  "hardware": {
-    "gpu": "H100",
-    "count": 1,
-    "memory_gb": 80
-  },
-  "load": {
-    "trace_source": "wildchat",
-    "trace_filter": "first user turn, English+mixed, <=4000 chars",
-    "lang": "mixed",
-    "synthetic_seed": null
-  },
-  "generation": {
-    "temperature": 0,
-    "natural_stopping": true,
-    "gen_concurrency": 8,
-    "max_tokens_cap": 1024
-  },
-  "rubric": {
-    "file": "rubrics/default-en.md",
-    "lang": "en"
-  },
-  "anchors": {
-    "n_frozen": 150,
-    "n_screen": 40,
-    "n_calib_texts": 256,
-    "derive_seed": 20266101,
-    "run_seed_base": 20266100,
-    "blind_seed": 20266102,
-    "reuse": null
-  },
-  "private_segment_sha256": "fb1c42c1f6694554b9ab5bdbab8e6ea948b7af8475cca1ba2f57638b512d69c0"
+ "schema": "effiq-spec/v1",
+ "cell": {
+  "id": "cell1-qwen3-32b",
+  "pilot": "005",
+  "role": "shakedown"
+ },
+ "model": {
+  "repo_id": "Qwen/Qwen3-32B",
+  "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+  "family": "qwen3-dense",
+  "max_model_len": 32768,
+  "serve_extra_flags": "",
+  "profile_scope_regex": "^model\\.layers\\.\\d+\\.self_attn\\.(q_proj|k_proj|v_proj|o_proj)$"
+ },
+ "hardware": {
+  "gpu": "H100",
+  "count": 1,
+  "memory_gb": 80
+ },
+ "load": {
+  "trace_source": "wildchat",
+  "trace_filter": "first user turn, English+mixed, <=4000 chars",
+  "lang": "mixed",
+  "synthetic_seed": null
+ },
+ "generation": {
+  "temperature": 0,
+  "natural_stopping": true,
+  "gen_concurrency": 8,
+  "max_tokens_cap": 1024
+ },
+ "rubric": {
+  "file": "rubrics/default-en.md",
+  "lang": "en"
+ },
+ "anchors": {
+  "n_frozen": 150,
+  "n_screen": 40,
+  "n_calib_texts": 256,
+  "derive_seed": 20266101,
+  "run_seed_base": 20266100,
+  "blind_seed": 20266102,
+  "reuse": null
+ },
+ "private_segment_sha256": "fb1c42c1f6694554b9ab5bdbab8e6ea948b7af8475cca1ba2f57638b512d69c0"
 }
