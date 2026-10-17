@@ -1,0 +1,10 @@
+# reproducible artifacts are not pushed — model checkpoints built inside
+# run dirs are regenerable tooling byproducts, not evidence.
+**/dryrun/
+*.safetensors
+*.bin
+*.pt
+*.gguf
+__pycache__/
+*.pyc
+*.log

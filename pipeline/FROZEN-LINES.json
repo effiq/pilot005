@@ -1,0 +1,45 @@
+{
+  "_comment": "Pilot 005 verdict lines — frozen in Protocol Lock v4.2 (L0). The instrument, not the object. Editing this file mid-run is a protocol violation; changes go through numbered addenda ONLY, and verdict-line changes mid-run are forbidden outright.",
+  "frozen_at": "2026-10-17",
+  "protocol_sha256_note": "Pilot005-Protocol-v4.2-en.md in repo root; hash recorded in first run archive",
+  "gates": {
+    "adaptation_edits_max": 0,
+    "interventions_max": 8,
+    "wallclock_hours_per_cell": 72,
+    "confirmation_attempts_max": 2,
+    "dev_phase_monotonic_decrease": true,
+    "migration_ci_lower": 1.20,
+    "recipe_ci_lower": 1.50,
+    "quality_tolerance_overall": -0.1,
+    "quality_tolerance_axis": -0.1,
+    "tail_latency_noninferior_ratio": 1.05,
+    "judge_calibration_r_min": 0.80
+  },
+  "wallclock_two_phase": {
+    "development_phase": "untimed; fully recorded and disclosed (duration, crash/repair counts); per-cell development durations are published and must decrease monotonically (cell3 <= cell2); cell1 is the shakedown cell, its duration published as baseline",
+    "confirmation_phase": "72h continuous calendar clock per cell, capped at 2 attempts; clock is cumulative across attempts (no reset on abort/rerun); every confirmation run is recorded and published",
+    "operator_wait_sla": "waiting-for-operator events inside the confirmation phase are billed at min(actual_wait, 1h); event start/stop are machine-determined by the state machine, not human-declared",
+    "outage_carveout": "provider outage documented on a public status page pauses the confirmation clock; disclosed via addendum",
+    "scope_note": "gates.wallclock_hours_per_cell constrains the CONFIRMATION phase only. run_cell.sh requires EFFIQ_PHASE=development|confirmation; the rail arms only under confirmation. Arming the confirmation clock is the pre-registered intervention 'confirmation-phase declaration' (Appendix A)."
+  },
+  "statistics": {
+    "n_runs": 10,
+    "straddle": false,
+    "bootstrap_resamples": 100000,
+    "bootstrap_seed": 20262002,
+    "screening_proceed_margin": 0.05
+  },
+  "run_validity": {
+    "rule": "void/rerun requires contemporaneous provider status-page evidence; otherwise every run counts as measured",
+    "symmetric": true
+  },
+  "env_stack": {
+    "torch_prefix": "2.13.0",
+    "vllm": "0.31.0",
+    "compressed_tensors": "0.17.0",
+    "transformers": "5.10.4",
+    "llmcompressor": "0.12.0",
+    "datasets": "4.8.4",
+    "accelerate": "1.13.0"
+  }
+}

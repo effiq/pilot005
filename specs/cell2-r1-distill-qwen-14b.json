@@ -1,0 +1,47 @@
+{
+  "schema": "effiq-spec/v1",
+  "cell": {
+    "id": "cell2-r1-distill-qwen-14b",
+    "pilot": "005",
+    "role": "verdict-bearing"
+  },
+  "model": {
+    "repo_id": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+    "revision": "PIN_AT_IGNITION__fetch HEAD commit sha from HF API, write here, commit BEFORE first run",
+    "family": "qwen2.5-dense",
+    "max_model_len": 32768,
+    "serve_extra_flags": "",
+    "profile_scope_regex": "^model\\.layers\\.\\d+\\.self_attn\\.(q_proj|k_proj|v_proj|o_proj)$"
+  },
+  "hardware": {
+    "gpu": "H100",
+    "count": 1,
+    "memory_gb": 80
+  },
+  "load": {
+    "trace_source": "wildchat",
+    "trace_filter": "first user turn, reasoning-style prompts, English+mixed, <=4000 chars; long-CoT decode stress declared in trace_provenance",
+    "lang": "mixed",
+    "synthetic_seed": null
+  },
+  "generation": {
+    "temperature": 0,
+    "natural_stopping": true,
+    "gen_concurrency": 8,
+    "max_tokens_cap": 1024
+  },
+  "rubric": {
+    "file": "rubrics/default-en.md",
+    "lang": "en"
+  },
+  "anchors": {
+    "n_frozen": 150,
+    "n_screen": 40,
+    "n_calib_texts": 256,
+    "derive_seed": 20266201,
+    "run_seed_base": 20266200,
+    "blind_seed": 20266202,
+    "reuse": null
+  },
+  "private_segment_sha256": "6a3010dc7f61bb2761c45e7d95ed273cccbfcb1a3a546e65ed733cf544ca0b2e"
+}

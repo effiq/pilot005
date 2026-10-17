@@ -1,0 +1,59 @@
+{
+  "_comment": "Pilot 005 Appendix B — judge panel, pre-registered as ORDERED lists (Protocol Lock v4.2 §4). Seats are filled in fixed order, stopping at the first pass of the calibration gate. Never shopping. ALL calibration results, including failures, are published in the VERDICT appendix. If the pool is exhausted, the pod-local judge steps in and the limitation is disclosed.",
+  "verification": {
+    "live_checked_at": "2026-10-17T06:33:28Z",
+    "source": "OpenRouter /api/v1/models (469 models listed)",
+    "removed_ids": [
+      {"id": "qwen/qwen3.8-max", "reason": "bare slug does not exist on the serving endpoint; superseded by dated pin qwen3.8-max-0902"},
+      {"id": "deepseek/deepseek-v4-pro", "reason": "not served on the judge channel at verification time"},
+      {"id": "moonshotai/kimi-k3", "reason": "not served on the judge channel at verification time"},
+      {"id": "z-ai/glm-5.3-prime", "reason": "not served on the judge channel at verification time"}
+    ]
+  },
+  "calibration": {
+    "exam": "v2-constructive-labels",
+    "threshold_r": 0.80,
+    "level": "category-level",
+    "items_per_axis": 24,
+    "papers": {"EN": "cells 1-2", "AR": "cell 3 (human-annotated Arabic reference samples; MSA only)"},
+    "first_pass_stops": true,
+    "firewall": "exam finalized before any scoring data exists",
+    "publish_all_results_including_failures": true
+  },
+  "panel_size": 3,
+  "seats": [
+    {
+      "seat": "chief",
+      "ordered_pool": [
+        {"id": "qwen/qwen3.8-max-0902", "via": "openrouter"},
+        {"id": "qwen/qwen3-235b-a22b-2507", "via": "openrouter"}
+      ]
+    },
+    {
+      "seat": "second",
+      "ordered_pool": [
+        {"id": "deepseek/deepseek-v3.2", "via": "openrouter"},
+        {"id": "deepseek/deepseek-chat-v3.1", "via": "openrouter"},
+        {"id": "deepseek/deepseek-chat-v3-0324", "via": "openrouter", "note": "red-dot judge lineage anchor (Pilots 002-004)"}
+      ]
+    },
+    {
+      "seat": "third",
+      "ordered_pool": [
+        {"id": "moonshotai/kimi-k2.6", "via": "openrouter"},
+        {"id": "z-ai/glm-4.6", "via": "openrouter"}
+      ],
+      "rule": "Kimi before GLM; first to clear calibration takes the seat"
+    }
+  ],
+  "cell_overrides": {
+    "cell3": {
+      "seat": "chief",
+      "ordered_pool": [
+        {"id": "qwen/qwen3-235b-a22b-2507", "via": "openrouter", "note": "Arabic-capable chief locked per owner decision 2026-10-14 (HELM Arabic open-weights top)"}
+      ]
+    }
+  },
+  "anchor": {"id": "pod-local", "model": "Qwen/Qwen3-32B", "note": "byte-reproducible local anchor; runs on the pod, not a voting seat"},
+  "pool_exhausted": "pod-local judge steps in; calibration-gate status disclosed as limitation in VERDICT"
+}
