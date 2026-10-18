@@ -140,12 +140,18 @@ PHASE="${EFFIQ_PHASE:?EFFIQ_PHASE required (development|confirmation) — two-ph
 [ "$PHASE" = "development" ] || [ "$PHASE" = "confirmation" ] || die "EFFIQ_PHASE must be development|confirmation"
 CLOCK="$CELL_DIR/wallclock-$PHASE.json"
 
-# intervention ledger: one jsonl line per human action that alters run state
+# intervention ledger: one jsonl line per human action that alters run state.
+# Count HUMAN actions only (v4.2: machine actions are "logged and published,
+# but not counted") — run-complete rows are machine bookkeeping appended after
+# a run's last human action. Defect fix (2026-10-18, ADDENDUM-02): the raw
+# wc -l count included those rows; after cell-1 development (5 human ignitions
+# + 1 machine row) a single confirmation resume would have tripped the cap at
+# 9 raw lines, locking the phase out of its frozen second attempt.
 log_intervention() {  # $1 = action label
   printf '{"ts":"%s","cell":"%s","action":%s}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$EFFIQ_CELL_ID" \
     "$(python3 -c 'import json,sys;print(json.dumps(sys.argv[1]))' "$1")" >> "$LEDGER"
 }
-intervention_count() { [ -f "$LEDGER" ] && wc -l < "$LEDGER" || echo 0; }
+intervention_count() { [ -f "$LEDGER" ] && { grep -cv '"action":"run-complete:' "$LEDGER" || true; } || echo 0; }
 INTERVENTIONS_MAX=$(python3 -c "import json,os;print(json.load(open(os.environ['EFFIQ_LINES']))['gates']['interventions_max'])")
 WALLCLOCK_H=$(python3 -c "import json,os;print(json.load(open(os.environ['EFFIQ_LINES']))['gates']['wallclock_hours_per_cell'])")
 CONF_ATTEMPTS_MAX=$(python3 -c "import json,os;print(json.load(open(os.environ['EFFIQ_LINES']))['gates']['confirmation_attempts_max'])")
