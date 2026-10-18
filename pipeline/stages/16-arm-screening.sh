@@ -423,8 +423,19 @@ verdict = {"winner": winner, "clarity_delta": wd["clarity"], "margin": margin,
            "proceed": wd["clarity"] >= -margin, "table": table,
            "note": "screening is indicative; the winner gets ONE confirmation shot in stage 18"}
 json.dump(verdict, open(f"{rd}/screening_verdict.json", "w"), indent=1, sort_keys=True)
-json.dump({"arm_id": winner, "recipe_sha256": None, "source": "stage-16 screening",
-           "note": "recipe sha resolved from recipes_executed.jsonl at stage 18"},
+# Defect fix (2026-10-18, ADDENDUM-02): resolve the winner's recipe sha here.
+# The previous wave-1 writer hard-coded recipe_sha256=None under a stale note
+# ("resolved at stage 18"); stage 18 in fact reads winner.json, and when the
+# wave-1 winner survives the wave-2 merge (no overwrite), the string "None"
+# propagated into verdict_c.json (observed on cell1). Same custody lookup as
+# the wave-2 final writer below; winner here is always a wave-1 arm, whose
+# row already exists in recipes_executed.jsonl (b4-w2 is appended later).
+wsha1 = None
+for l in open(f"{rd}/recipes_executed.jsonl"):
+    e = json.loads(l)
+    if e.get("arm_id") == winner: wsha1 = e.get("recipe_sha256")
+if wsha1 is None: print("FATAL: wave-1 winner recipe sha not in custody log", file=sys.stderr); sys.exit(1)
+json.dump({"arm_id": winner, "recipe_sha256": wsha1, "source": "stage-16 screening"},
           open(f"{rd}/winner.json", "w"), indent=1)
 print(json.dumps(verdict["table"], indent=1))
 print(f"wave-1 leader: {winner} clarity_delta={wd['clarity']:+.3f} (indicative; final proceed decided after wave-2)")
