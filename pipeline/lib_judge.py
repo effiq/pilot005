@@ -2,11 +2,11 @@
 """lib_judge.py — blind judging machinery for Pilot 005 (stages 16/18).
 
 One judge call = one rubric-scored response. Amendment-01/02 mechanics (frozen):
-reasoning excluded from the response (several frozen-pool endpoints make
-reasoning mandatory, so it cannot be disabled — Amendment-02); null/empty
-content = error; max_tokens 1024; temperature 0. The rubric text arrives as
-DATA (spec.rubric.file) — this file contains no model names and no
-cell-conditional logic.
+null/empty content = error; temperature 0. ADDENDUM-03 pins the endpoint
+reasoning policy in panel.json at calibration time, and production judging
+reuses that exact payload; max_tokens 4096. The rubric text arrives as DATA
+(spec.rubric.file) — this file contains no model names and no cell-conditional
+logic.
 
 CLI:
   python3 lib_judge.py --panel panel.json --rubric rubric.md \
@@ -34,7 +34,48 @@ def build_prompt(rubric, prompt, response):
     return (rubric.strip() + "\n\nPROMPT:\n" + prompt + "\n\nRESPONSE:\n" + response +
             "\n\nReply with exactly 4 integers (clarity, correctness, completeness, overall), space-separated, nothing else.")
 
-def judge_one(model, rubric, prompt, response, key, base, mock, local_base=None):
+def load_model_capabilities(key, base):
+    """Fetch the judge endpoint capability map once per calibration run."""
+    req = urllib.request.Request(f"{base}/models", headers={"Authorization": f"Bearer {key}"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        data = json.loads(r.read())
+    return {m["id"]: m for m in data.get("data", []) if m.get("id")}
+
+def reasoning_policy_from_capability(cap):
+    """ADDENDUM-03: bound mandatory reasoning; disable optional reasoning."""
+    r = (cap or {}).get("reasoning") or {}
+    if r.get("mandatory"):
+        efforts = set(r.get("supported_efforts") or [])
+        for effort in ("low", "minimal", "medium", "high"):
+            if effort in efforts:
+                return {"effort": effort, "exclude": True}
+        raise RuntimeError("mandatory-reasoning judge endpoint exposes no bounded effort")
+    return {"enabled": False}
+
+def pinned_reasoning_policy(panel, model):
+    """Production judging must reuse the exact policy pinned by stage 14."""
+    if "LOCAL-FALLBACK" in model:
+        return None
+    policy = (panel.get("reasoning_policies") or {}).get(model)
+    if not isinstance(policy, dict) or not policy:
+        raise RuntimeError(f"panel.json has no pinned reasoning policy for API judge {model!r}; rerun stage 14")
+    return policy
+
+def extract_content(resp):
+    choice = resp["choices"][0]
+    msg = choice.get("message") or {}
+    content = msg.get("content")
+    if not content or not str(content).strip():
+        usage = resp.get("usage") or {}
+        details = usage.get("completion_tokens_details") or {}
+        raise RuntimeError(
+            "empty judge content = error (Amendment-01); "
+            f"finish_reason={choice.get('finish_reason')!r} "
+            f"completion_tokens={usage.get('completion_tokens')!r} "
+            f"reasoning_tokens={details.get('reasoning_tokens')!r}")
+    return str(content)
+
+def judge_one(model, rubric, prompt, response, key, base, mock, local_base=None, reasoning_policy=None):
     if mock:
         # mock scores keyed on (judge, prompt) only → candidate/reference deltas ≈ 0,
         # so the mock chain exercises the PASS path deterministically
@@ -56,14 +97,14 @@ def judge_one(model, rubric, prompt, response, key, base, mock, local_base=None)
                            "max_tokens": 4096, "temperature": 0}).encode()
         base, key = local_base, "EMPTY"
     else:
+        if reasoning_policy is None:
+            raise RuntimeError(f"missing pinned reasoning policy for API judge {model!r}; rerun stage 14")
         body = json.dumps({"model": model, "messages": [{"role": "user", "content": user}],
-                           "reasoning": {"exclude": True}, "max_tokens": 4096, "temperature": 0}).encode()  # 4096: mandatory reasoning starved the 1024 budget (Amendment-03)
+                           "reasoning": reasoning_policy, "max_tokens": 4096, "temperature": 0}).encode()
     req = urllib.request.Request(f"{base}/chat/completions", data=body,
         headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=300) as r:
-        content = json.loads(r.read())["choices"][0]["message"]["content"]
-    if not content or not content.strip():
-        raise RuntimeError("empty judge content = error (Amendment-01)")
+        content = extract_content(json.loads(r.read()))
     nums = [int(t) for t in content.replace(",", " ").split() if t.lstrip("-").isdigit()][:4]
     if len(nums) != 4:
         raise RuntimeError(f"unparseable judge reply: {content[:120]!r}")
@@ -98,6 +139,7 @@ def main():
 
     panel = json.load(open(a.panel))
     judges = [a.judge] if a.judge else [panel["seated"][s] for s in ("chief", "second", "third")]
+    reasoning_policies = {} if a.mock else {j: pinned_reasoning_policy(panel, j) for j in judges if "LOCAL-FALLBACK" not in j}
     # Amendment-12 (D19): local-fallback sentinels route to the pod-local anchor
     # via --local-base (per-judge routing in judge_one). Fail loudly if a sentinel
     # is seated but the caller brought no local endpoint.
@@ -119,7 +161,8 @@ def main():
                     print(f"FATAL: {which} output missing for {item['id']}", file=sys.stderr); sys.exit(1)
             for j in judges:
                 for which, pool in (("candidate", cand), ("reference", ref)):
-                    scores = judge_one(j, rubric, item["text"], pool[item["id"]]["output"], key, a.base, a.mock, a.local_base)
+                    scores = judge_one(j, rubric, item["text"], pool[item["id"]]["output"], key, a.base,
+                                       a.mock, a.local_base, reasoning_policies.get(j))
                     out.write(json.dumps({
                         "blind_id": entry["blind_id"], "frozen_index": entry["frozen_index"],
                         "item_id": item["id"], "judge": j, "which": which,

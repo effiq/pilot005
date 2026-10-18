@@ -31,10 +31,10 @@
 #
 # Outputs (in run dir):
 #   calibration_results.jsonl — every attempt, pass or fail (published)
-#   raw_replies.jsonl         — every raw judge reply, per row (Amendment-04,
-#                               D9 forensics: parse artifacts vs genuine
-#                               disagreement are now distinguishable)
-#   panel.json                — the seated panel + anchor + sha custody
+#   raw_replies.jsonl         — every raw judge reply, per row, with finish
+#                               reason and token counters (ADDENDUM-03 forensics)
+#   panel.json                — the seated panel + anchor + pinned reasoning
+#                               policies + sha custody
 #   COMPLETE                  — only if all three seats cleared the gate
 #
 # Test hooks (sandbox only): STAGE14_OUT_DIR, STAGE14_MOCK_JUDGE, KEY_FILE,
@@ -90,10 +90,23 @@ KEY = open(os.environ["KEY_FILE"]).read().strip()
 BASE = os.environ["OR_BASE_URL"]
 rubric = open(os.environ["RUBRIC_FILE"], encoding="utf-8").read()
 sys.path.insert(0, os.path.join(os.environ["REPO_DIR"], "pipeline"))
-from lib_judge import build_prompt  # Amendment-04: calibration probe IS the production prompt
+from lib_judge import build_prompt, load_model_capabilities, reasoning_policy_from_capability  # Amendment-04 + ADDENDUM-03
 results = open(f"{RUN_DIR}/calibration_results.jsonl", "a")
 raw = open(f"{RUN_DIR}/raw_replies.jsonl", "a", encoding="utf-8")
 RESOLVED = {}  # Amendment-02: requested alias -> provider-resolved model id, per run archive
+REASONING = {}  # ADDENDUM-03: requested model id -> pinned reasoning payload
+CAPS = {} if MOCK else load_model_capabilities(KEY, BASE)
+
+def reasoning_policy_for(model):
+    if model not in REASONING:
+        if MOCK:
+            REASONING[model] = {"mock": True}
+        else:
+            cap = CAPS.get(model)
+            if cap is None:
+                raise RuntimeError(f"judge model {model!r} absent from capability endpoint")
+            REASONING[model] = reasoning_policy_from_capability(cap)
+    return REASONING[model]
 
 def pearson(xs, ys):
     n = len(xs)
@@ -105,33 +118,40 @@ def pearson(xs, ys):
 
 AXES = ["clarity", "correctness", "completeness", "overall"]
 
-def judge_score(model, s):
+def judge_score(model, s, reasoning_policy):
     """Score one sample with the EXACT production prompt, built by
-    lib_judge.build_prompt (Amendment-04: Amendment-03 aligned the axis
-    contract but left the rubric body out of the probe — all five candidates
-    in run_20261015T10xxxxxxZ then failed on the SAME axis, completeness
-    (worst r −0.01…0.43), while the clean-mapped correctness axis reached
-    0.77–0.89 with 3/5 ≥ 0.80; the instrument, not the judges, was the
-    outlier). Amendment-01/02/03 mechanics kept: reasoning excluded
-    (mandatory on several endpoints), temperature 0, empty content = error,
-    max_tokens 4096. Raw replies archived per row (D9 forensics)."""
+    lib_judge.build_prompt (Amendment-04). ADDENDUM-03 pins the reasoning
+    payload from endpoint capability metadata; production judging reuses the
+    same payload from panel.json. Temperature 0, empty content = error,
+    max_tokens 4096. Raw replies archive finish reason and token counters."""
     if MOCK:
         rng = random.Random(hash((model, s["id"])) & 0xffffffff)
         return {a: max(1, min(10, round(s["human_score"] + rng.gauss(0, 0.5)))) for a in AXES}
     body = json.dumps({
         "model": model,
         "messages": [{"role": "user", "content": build_prompt(rubric, s["prompt"], s["response"])}],
-        "reasoning": {"exclude": True}, "max_tokens": 4096, "temperature": 0,
+        "reasoning": reasoning_policy, "max_tokens": 4096, "temperature": 0,
     }).encode()
     req = urllib.request.Request(f"{BASE}/chat/completions", data=body, headers={
         "Authorization": f"Bearer {KEY}", "Content-Type": "application/json"})
     with urllib.request.urlopen(req, timeout=300) as r:
         resp = json.loads(r.read())
     RESOLVED[model] = resp.get("model", model)  # pin the resolved id (JUDGES.json: "exact model id pinned at ignition in run archive")
-    content = resp["choices"][0]["message"]["content"]
-    raw.write(json.dumps({"model": model, "id": s["id"], "content": content}, ensure_ascii=False) + "\n"); raw.flush()
-    if not content or not content.strip():
-        raise RuntimeError("empty judge content = error (Amendment-01/02/03)")
+    choice = resp["choices"][0]
+    msg = choice.get("message") or {}
+    usage = resp.get("usage") or {}
+    details = usage.get("completion_tokens_details") or {}
+    content = msg.get("content")
+    raw.write(json.dumps({"model": model, "id": s["id"], "content": content,
+                          "finish_reason": choice.get("finish_reason"),
+                          "completion_tokens": usage.get("completion_tokens"),
+                          "reasoning_tokens": details.get("reasoning_tokens")}, ensure_ascii=False) + "\n"); raw.flush()
+    if not content or not str(content).strip():
+        raise RuntimeError("empty judge content = error (Amendment-01/02/03); "
+                           f"finish_reason={choice.get('finish_reason')!r} "
+                           f"completion_tokens={usage.get('completion_tokens')!r} "
+                           f"reasoning_tokens={details.get('reasoning_tokens')!r}")
+    content = str(content)
     nums = [int(t) for t in content.replace(",", " ").split() if t.lstrip("-").isdigit()][:4]
     if len(nums) != 4:
         raise RuntimeError(f"unparseable judge reply: {content[:80]!r}")
@@ -139,15 +159,16 @@ def judge_score(model, s):
 
 def calibrate(model):
     by_cat = {}
+    reasoning_policy = reasoning_policy_for(model)
     for s in samples:
-        sc = judge_score(model, s)
+        sc = judge_score(model, s, reasoning_policy)
         by_cat.setdefault(s["category"], []).append((sc[s["category"]], s["human_score"]))
         if time.time() - T0 > MAXS:
             raise TimeoutError("time rail")
     cat_r = {c: pearson([a for a,_ in v], [b for _,b in v]) for c, v in by_cat.items()}
     worst = min(cat_r.values()) if cat_r else 0.0
     return {"model": model, "category_r": cat_r, "worst_category_r": worst,
-            "pass": worst >= R_MIN, "n": len(samples)}
+            "pass": worst >= R_MIN, "n": len(samples), "reasoning_policy": reasoning_policy}
 
 seated, anchor = {}, J["anchor"]
 for seat in J["seats"]:
@@ -157,6 +178,7 @@ for seat in J["seats"]:
             res = calibrate(cand["id"])
         except Exception as e:
             res = {"model": cand["id"], "pass": False, "error": str(e)[:200]}
+            if cand["id"] in REASONING: res["reasoning_policy"] = REASONING[cand["id"]]
         res["seat"] = seat["seat"]; res["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         if cand["id"] in RESOLVED: res["resolved_model"] = RESOLVED[cand["id"]]
         results.write(json.dumps(res) + "\n"); results.flush()
@@ -168,7 +190,9 @@ for seat in J["seats"]:
         chosen = anchor["model"] + " (LOCAL-FALLBACK, limitation disclosed)"
     seated[seat["seat"]] = chosen
 
+panel_reasoning = {j: REASONING[j] for j in seated.values() if "LOCAL-FALLBACK" not in j and j in REASONING}
 panel = {"seated": seated, "anchor": anchor, "threshold_r": R_MIN,
+         "reasoning_policies": panel_reasoning,
          "results_file": "calibration_results.jsonl",
          "watermark": "CALIBRATION DATA ONLY — never enters the CI",
          "all_results_published": True}
