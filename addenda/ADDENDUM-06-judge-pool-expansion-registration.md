@@ -71,7 +71,7 @@ All post-probe outcomes — including marginal misses (worst-axis r ∈ [0.70, 0
 ## 9. Execution record (filled at probe time, then committed)
 
 ```
-probe_timestamp_utc:        2026-10-20T08:2x:xxZ (UTC, probe window 08:05-08:30)
+probe_timestamp_utc:        2026-10-20, probe window 08:05-08:35 UTC
 credential_ref:             vault:openrouter_key (contents never embedded anywhere)
 models_listing_sha256:      8746c3e6c0855b80c12202ba69a35a6bef7e86f1977bdf85576772a851771d36
 models_listing_retrieved:   2026-10-20, 470 entries, live source /models
