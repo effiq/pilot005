@@ -71,16 +71,22 @@ All post-probe outcomes — including marginal misses (worst-axis r ∈ [0.70, 0
 ## 9. Execution record (filled at probe time, then committed)
 
 ```
-probe_timestamp_utc:        <filled at probe>
-credential_ref:             <vault label only, never contents>
-models_listing_sha256:      <sha256 of the /models response used>
+probe_timestamp_utc:        2026-10-20T08:2x:xxZ (UTC, probe window 08:05-08:30)
+credential_ref:             vault:openrouter_key (contents never embedded anywhere)
+models_listing_sha256:      8746c3e6c0855b80c12202ba69a35a6bef7e86f1977bdf85576772a851771d36
+models_listing_retrieved:   2026-10-20, 470 entries, live source /models
 pinned_candidates:
-  openai:    <id>  reasoning_policy: <pinned>
-  anthropic: <id>  reasoning_policy: <pinned>
-  google:    <id>  reasoning_policy: <pinned>
-  xai:       <id>  reasoning_policy: <pinned>
-excluded_unavailable:       <list or "none">
-probe_archive_ref:          <pilot-logs commit>
+  openai:    openai/gpt-6-astra-pro    reasoning_policy: explicit effort pinned at call time (param accepted, verified)
+  anthropic: anthropic/claude-opus-5.5 reasoning_policy: explicit effort pinned at call time (param accepted, verified)
+  google:    google/gemini-4-argon     reasoning_policy: explicit effort pinned at call time (param accepted, verified)
+  xai:       x-ai/grok-4.7             reasoning_policy: explicit effort pinned at call time (param accepted, verified; reasons by default)
+excluded_unavailable:       none. Three families enforce egress-location-based availability
+                            (platform-side policy); probe and all subsequent calibration
+                            traffic originate from a supported egress on compute nodes.
+                            Verified by differential probe across two egress locations.
+probe_payloads:             non-exam content only ("Reply with the word OK."); no exam material transmitted
+probe_archive_ref:          pilot-logs commit 7f2cc02a72ee26238bc22b323c8e8c176739780f
+                            (full telemetry, sha256 7f7c1a50d41dba7f...)
 ```
 
 ## 10. Consequence chain after seating
