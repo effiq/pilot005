@@ -433,7 +433,7 @@ json.dump(verdict, open(f"{rd}/screening_verdict.json", "w"), indent=1, sort_key
 wsha1 = None
 for l in open(f"{rd}/recipes_executed.jsonl"):
     e = json.loads(l)
-    if e.get("arm_id") == winner: wsha1 = e.get("recipe_sha256")
+    if e.get("arm_id") == winner and e.get("recipe_sha256"): wsha1 = e["recipe_sha256"]  # ADDENDUM-17: build rows carry no recipe_sha256; last-non-null wins
 if wsha1 is None: print("FATAL: wave-1 winner recipe sha not in custody log", file=sys.stderr); sys.exit(1)
 json.dump({"arm_id": winner, "recipe_sha256": wsha1, "source": "stage-16 screening"},
           open(f"{rd}/winner.json", "w"), indent=1)
@@ -514,7 +514,7 @@ json.dump(verdict, open(f"{rd}/screening_verdict.json", "w"), indent=1, sort_key
 wsha = None
 for l in open(f"{rd}/recipes_executed.jsonl"):
     e = json.loads(l)
-    if e.get("arm_id") == winner: wsha = e.get("recipe_sha256")
+    if e.get("arm_id") == winner and e.get("recipe_sha256"): wsha = e["recipe_sha256"]  # ADDENDUM-17: same fix, wave-2 final writer
 if wsha is None: print("FATAL: winner recipe sha not in custody log", file=sys.stderr); sys.exit(1)
 json.dump({"arm_id": winner, "recipe_sha256": wsha, "source": "stage-16 screening (wave-2 final)"},
           open(f"{rd}/winner.json", "w"), indent=1)
