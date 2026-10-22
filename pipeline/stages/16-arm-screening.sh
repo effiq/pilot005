@@ -407,8 +407,8 @@ judge_server_down
 
 # ---------- 5. winner selection + proceed rule (frozen) ----------
 note "5. winner selection (argmax clarity delta; margin from FROZEN-LINES)"
-RUN_DIR="$RUN_DIR" LINES="$REPO_DIR/pipeline/FROZEN-LINES.json" python3 - <<'PY'
-import json, os, statistics, sys
+RUN_DIR="$RUN_DIR" LINES="$REPO_DIR/pipeline/FROZEN-LINES.json" RECIPES_FILE="$RECIPES_FILE" python3 - <<'PY'
+import hashlib, json, os, statistics, sys
 rd = os.environ["RUN_DIR"]
 margin = json.load(open(os.environ["LINES"]))["statistics"]["screening_proceed_margin"]
 def deltas(arm):
@@ -439,7 +439,20 @@ wsha1 = None
 for l in open(f"{rd}/recipes_executed.jsonl"):
     e = json.loads(l)
     if e.get("arm_id") == winner and e.get("recipe_sha256"): wsha1 = e["recipe_sha256"]  # ADDENDUM-17: build rows carry no recipe_sha256; last-non-null wins
-if wsha1 is None: print("FATAL: wave-1 winner recipe sha not in custody log", file=sys.stderr); sys.exit(1)
+if wsha1 is None:
+    # ADDENDUM-21: gate-file arms (b3-class) carry no compose row; resolve the
+    # winner's recipe sha from the gate recipe with the same canonical form
+    # (build-relevant subset only - serve_extra is a serve-time lever, excluded),
+    # then append the missing custody row. Widens the lookup; absence from the
+    # gate file still FATALs.
+    gate = json.load(open(os.environ["RECIPES_FILE"]))
+    gr = gate.get("recipes", {}).get(winner)
+    if gr is None: print("FATAL: wave-1 winner recipe sha not in custody log", file=sys.stderr); sys.exit(1)
+    subset = {k: gr[k] for k in ("arm_id", "builder", "levers", "quantization", "calibration", "uses_base_model", "kv_cache_scheme") if k in gr}
+    wsha1 = hashlib.sha256(json.dumps(subset, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    with open(f"{rd}/recipes_executed.jsonl", "a") as f:
+        f.write(json.dumps({"arm_id": winner, "levers": gr.get("levers", []), "recipe_sha256": wsha1,
+                            "composed_from": ["gate-layer recipe file"]}) + "\n")
 json.dump({"arm_id": winner, "recipe_sha256": wsha1, "source": "stage-16 screening"},
           open(f"{rd}/winner.json", "w"), indent=1)
 print(json.dumps(verdict["table"], indent=1))
