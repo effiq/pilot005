@@ -332,8 +332,13 @@ if "kv_cache_scheme" in r:
 mods.append(QuantizationModifier(**qk))
 calib = [json.loads(l)["text"] for l in open(os.environ["CALIB_JSONL"])]
 t0 = time.time()
+# ADDENDUM-19: text-only checkpoints whose model_type maps to a multimodal
+# AutoProcessor (gemma3_text) fail llmcompressor's implicit processor init;
+# pass the tokenizer directly — llmcompressor's own prescribed remedy.
+from transformers import AutoTokenizer
+processor = AutoTokenizer.from_pretrained(os.environ["MODEL_DIR"])
 oneshot(model=os.environ["MODEL_DIR"], dataset=Dataset.from_list([{"text": t} for t in calib]),
-        recipe=mods, output_dir=os.environ["CKPT_DIR"],
+        recipe=mods, output_dir=os.environ["CKPT_DIR"], processor=processor,
         num_calibration_samples=r["calibration"]["n_samples"], max_seq_length=r["calibration"]["max_seq_len"])
 h = hashlib.sha256()
 for dp, _, fns in sorted(os.walk(os.environ["CKPT_DIR"])):
