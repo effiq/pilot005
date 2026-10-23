@@ -15,6 +15,7 @@ Three model cells, one NVIDIA H100 (80GB), no advance tuning:
 | Artifact | What it pins |
 |---|---|
 | [Pilot005-Protocol-v4.2-en.md](Pilot005-Protocol-v4.2-en.md) | the full protocol — verdict lines, two-phase wall clock, judge calibration gate, intervention ledger, disclosure layers. Immutable after upload; changes only via numbered addenda (ADDENDUM-01 onward) |
+| [addenda/README.md](addenda/README.md) | the numbered addendum registry — every Protocol-Lock change in order, with sealed/not-routed items marked |
 | [pipeline/FROZEN-LINES.json](pipeline/FROZEN-LINES.json) | the verdict lines as data — the instrument, not the object |
 | [pipeline/JUDGES.json](pipeline/JUDGES.json) | judge panel as ordered pools, pre-registered; all IDs live-verified |
 | [MANIFEST.sha256](MANIFEST.sha256) | per-file integrity of the curated pipeline tree |
