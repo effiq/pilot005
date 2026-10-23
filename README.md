@@ -27,6 +27,14 @@ A FAIL is a negative lab report: a compressibility fact about one model × quant
 
 The development phase is untimed but fully recorded; per-cell development durations are published and must decrease monotonically (cell 3 ≤ cell 2). Zero-edits claims without shrinking setup time would be empty.
 
+## Verdicts
+
+All three cells have reached terminal verdicts — see the
+[verdict registry](verdicts/README.md): cell-1 PASS (baseline,
+non-verdict-bearing), cell-2 FAIL, cell-3 FAIL. Each verdict ships with a
+recomputation sheet: the speed-gate math reproduces bit-exactly from the
+published per-run rows under the frozen algorithm.
+
 ## Layout
 
 ```
@@ -34,6 +42,7 @@ pipeline/            the instrument: run_cell.sh orchestrator, stages 14–19, v
 specs/               the three cell specs (model × GPU × load anchor) — all model variation lives here, as data
 rubrics/             judge rubrics (EN / AR)
 staging/             dry-run harness (disposable-GPU mechanics validation; produces no evidence)
+verdicts/            the verdict registry: one VERDICT.md + REPRODUCE.md per cell
 ```
 
 ## Evidence flow
