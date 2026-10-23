@@ -28,8 +28,7 @@ never by history rewrite.
 | 19 | [Stage-16 Processor Implicit-Init Fix](ADDENDUM-19-stage16-processor-init-fix.md) | sealed 2026-10-22 | tokenizer passed explicitly; build-path smoke lesson |
 | 20 | [Cell-3 Attempt-1 Cap-Breach Sealing](ADDENDUM-20-cell3-attempt1-cap-breach-sealing.md) | sealed 2026-10-22 | 9 > 8 intervention cap; attempt-2 reset rules |
 | 21 | [Stage-16 Gate-File Arm Recipe-SHA Custody](ADDENDUM-21-stage16-gatefile-arm-recipe-sha-custody.md) | sealed 2026-10-22 | gate-file arms resolved with composition-canonical sha |
-
-| 22 | [Cell-4 Scope Extension](ADDENDUM-22-cell4-scope-extension.md) | ratified 2026-10-23 | Pilot 005 registry extends from three to four model cells; disclosure v2 note; effective order gates ignition |
+| 22 | — | sealed, not routed | no public text in the current tree |
 
 Cross-references: verdict registry at [../verdicts/README.md](../verdicts/README.md);
 frozen lines at [../pipeline/FROZEN-LINES.json](../pipeline/FROZEN-LINES.json);

@@ -12,6 +12,8 @@ Protocol Lock.
 | cell-2 | specs/cell2-r1-distill-qwen-14b.json | FAIL (recipe gate below line; quality gate FAIL) | 2026-10-22 | [cell2/VERDICT.md](cell2/VERDICT.md) · [REPRODUCE](cell2/REPRODUCE.md) |
 | cell-3 | specs/cell3-fanar-2-27b.json | FAIL (screening-exhausted) | 2026-10-22 | [cell3/VERDICT.md](cell3/VERDICT.md) · [REPRODUCE](cell3/REPRODUCE.md) |
 
+Pilot-level closure: [PILOT005-TOTAL-VERDICT.md](PILOT005-TOTAL-VERDICT.md) — Pilot 005 closed 2026-10-23; the table above is the complete set of cell verdicts.
+
 ## How to read these
 
 - Each verdict page quotes the verdict semantics verbatim and lists its
